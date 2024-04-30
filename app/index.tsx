@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import type { Region } from "react-native-maps";
-import MapView, { Circle, PROVIDER_GOOGLE } from "react-native-maps";
+import { Circle, Marker } from "react-native-maps";
+import MapView from "react-native-map-clustering";
 import type { BBox, GeoJsonProperties } from "geojson";
 import type { PointFeature } from "supercluster";
-import useSupercluster from "use-supercluster";
-import MarkerWithWrapper from "@/components/MarkerWithWrapper";
 import jobs from "@/constants/jobs.json";
 import { SearchJobAdRo } from "@/models";
+import { Marker as MarkerMap } from "@/components/Marker";
 
 export interface PointProperties {
   cluster: boolean;
@@ -57,7 +57,8 @@ const Map = () => {
   const { latDelta, lonDelta } = calculateDeltas(latitude, 75);
 
   // TODO: This shouldn't need to be sliced!
-  const searchResultJobAds = jobs.searchJobAds.slice(0, 300);
+  // DONE
+  const searchResultJobAds = jobs.searchJobAds;
 
   const regionToBoundingBox = (region: Region): BBox => {
     let lngD: number;
@@ -92,105 +93,71 @@ const Map = () => {
     setZoom(camera?.zoom ?? 10);
   };
 
-  const points = searchResultJobAds.map((searchJobAd) => {
-    const loc = searchJobAd.primaryLocation;
-
-    return {
-      type: "Feature",
-      properties: {
-        job: searchJobAd.jobAd,
-        cluster: false,
-        color: "blue",
-        searchJobAd,
-      },
-      geometry: {
-        type: "Point",
-        coordinates: [loc.location.lng, loc.location.lat],
-      },
-    } as PointWithProperties;
-  });
-
-  const { clusters, supercluster } = useSupercluster({
-    points,
-    bounds,
-    zoom,
-    options: {
-      radius: 60,
-      maxZoom: 25,
-    },
-  });
-
   function onPointPress() {
     Alert.alert(`Clicked on point!`);
   }
-
-  const renderMarkers = () => {
-    console.log(`points: ${points.length}`);
-    return points.map((point) => {
+  const initialRegion = {
+    latitude: DEFAULT_MAP_LOCATION.lat,
+    longitude: DEFAULT_MAP_LOCATION.lng,
+    latitudeDelta: latDelta,
+    longitudeDelta: lonDelta,
+  };
+  function renderRandomMarkers() {
+    return searchResultJobAds.map((item, index) => {
+      const loc = item.primaryLocation;
+      const company = item.jobAd.company;
       return (
-        <MarkerWithWrapper
-          key={point.properties.searchJobAd.combinedId}
-          isSelected={false}
-          onPointPress={onPointPress}
-          point={point}
-          zoom={zoom}
-        ></MarkerWithWrapper>
+        <Marker
+          onPress={onPointPress}
+          key={index}
+          coordinate={{
+            latitude: loc.location.lat,
+            longitude: loc.location.lng,
+          }}>
+          <MarkerMap
+            companyLogo={company.logoImg?.variants.min_dim_64_url ?? null}
+          />
+        </Marker>
       );
     });
-  };
+  }
 
   return (
     <View
       style={{
         flex: 1,
-      }}
-    >
-      <View
-        style={{
-          flex: 1,
-          position: "relative",
-        }}
-      >
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          onRegionChangeComplete={onRegionChangeComplete}
-          initialRegion={{
+      }}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        initialRegion={initialRegion}
+        onRegionChangeComplete={onRegionChangeComplete}
+        camera={{
+          center: {
             latitude: DEFAULT_MAP_LOCATION.lat,
             longitude: DEFAULT_MAP_LOCATION.lng,
-            latitudeDelta: latDelta,
-            longitudeDelta: lonDelta,
+          },
+          pitch: 0,
+          heading: 0,
+          zoom: 10,
+        }}
+        rotateEnabled={false}
+        zoomEnabled={true}
+        pitchEnabled={false}
+        zoomControlEnabled={true}
+        showsUserLocation={true}
+        showsMyLocationButton={false}>
+        <Circle
+          center={{
+            latitude: DEFAULT_MAP_LOCATION.lat,
+            longitude: DEFAULT_MAP_LOCATION.lng,
           }}
-          camera={{
-            center: {
-              latitude: DEFAULT_MAP_LOCATION.lat,
-              longitude: DEFAULT_MAP_LOCATION.lng,
-            },
-            pitch: 0,
-            heading: 0,
-            zoom: 10,
-          }}
-          rotateEnabled={false}
-          zoomEnabled={true}
-          pitchEnabled={false}
-          zoomControlEnabled={true}
-          showsUserLocation={true}
-          showsMyLocationButton={false}
-        >
-          <Circle
-            center={{
-              latitude: DEFAULT_MAP_LOCATION.lat,
-              longitude: DEFAULT_MAP_LOCATION.lng,
-            }}
-            radius={1000 * 50}
-            strokeWidth={2}
-            strokeColor="blue"
-          />
-
-          {renderMarkers()}
-        </MapView>
-      </View>
+          radius={1000 * 50}
+          strokeWidth={2}
+          strokeColor="blue"
+        />
+        {renderRandomMarkers()}
+      </MapView>
     </View>
   );
 };
@@ -198,6 +165,8 @@ const Map = () => {
 const styles = StyleSheet.create({
   map: {
     flex: 1,
+    width: "100%",
+    height: "100%",
   },
   cluster: {
     borderRadius: 100,
