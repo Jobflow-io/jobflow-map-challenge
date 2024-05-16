@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { MutableRefObject, useRef } from "react";
 import type { MapMarker } from "react-native-maps";
 import { Marker } from "react-native-maps";
 import { Marker as MarkerMap } from "@/components/Marker";
@@ -10,13 +10,16 @@ type Props = {
   onPointPress: () => void;
   isSelected: boolean;
   zoom: number;
+
+  shouldTrack: boolean;
+  renderCount: MutableRefObject<number>;
 };
 
 export default function MarkerWithWrapper({
   point,
   onPointPress,
-  zoom,
-  isSelected,
+  shouldTrack,
+  renderCount,
 }: Props) {
   const coordinates = point.geometry.coordinates;
   const markerRef = useRef<MapMarker>(null);
@@ -29,7 +32,7 @@ export default function MarkerWithWrapper({
   return (
     <Marker
       ref={markerRef}
-      tracksViewChanges={true}
+      tracksViewChanges={shouldTrack}
       coordinate={{
         latitude: lat,
         longitude: lng,
@@ -38,6 +41,7 @@ export default function MarkerWithWrapper({
     >
       <MarkerMap
         companyLogo={job.company.logoImg?.variants.min_dim_64_url ?? null}
+        renderCount={renderCount}
       />
     </Marker>
   );
