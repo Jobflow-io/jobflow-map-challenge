@@ -1,13 +1,23 @@
-import React from "react";
-import { Image, Text, View } from "react-native";
+import React, { Dispatch } from "react";
+import { Image, Platform, View } from "react-native";
 
+import { MapMarker } from "react-native-maps";
 import styles from "./styles";
 
 interface Props {
   companyLogo: string | null;
+  update: Dispatch<React.SetStateAction<boolean>>;
+  markerRef: React.RefObject<MapMarker>;
 }
 
-export const Marker = ({ companyLogo }: Props) => {
+export const Marker = ({ companyLogo, markerRef, update }: Props) => {
+  const onLoadEnd = () => {
+    if (Platform.OS === "android") {
+      markerRef.current?.redraw();
+    } else {
+      update(false);
+    }
+  };
   return (
     <View
       style={[
@@ -23,6 +33,8 @@ export const Marker = ({ companyLogo }: Props) => {
           style={[styles.logo]}
           resizeMode="contain"
           source={{ uri: companyLogo }}
+          onLoadEnd={onLoadEnd}
+          fadeDuration={0}
         />
       ) : (
         <Image
