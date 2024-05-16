@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
-import type { Region } from "react-native-maps";
-import MapView, { Circle, PROVIDER_GOOGLE } from "react-native-maps";
-import type { BBox, GeoJsonProperties } from "geojson";
-import type { PointFeature } from "supercluster";
-import useSupercluster from "use-supercluster";
-import MarkerWithWrapper from "@/components/MarkerWithWrapper";
+import ClusteredMarkers from "@/components/ClusteredMarkers";
 import jobs from "@/constants/jobs.json";
 import { SearchJobAdRo } from "@/models";
+import { calculateDeltas, regionToBoundingBox } from "@/utils";
+import type { BBox, GeoJsonProperties } from "geojson";
+import React, { useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import type { Region } from "react-native-maps";
+import MapView, { Circle, PROVIDER_GOOGLE } from "react-native-maps";
+import type { PointFeature } from "supercluster";
+import useSupercluster from "use-supercluster";
 
 export interface PointProperties {
   cluster: boolean;
@@ -25,27 +26,6 @@ const DEFAULT_MAP_LOCATION = {
   lng: 13.2599281,
 };
 
-const calculateDeltas = (latitude: number, radius: number) => {
-  // Earth's radius in kilometers
-  const earthRadius = 6371;
-  // This basically adds empty space around the radius circle
-  // For some reason adding the radius twice works perfectly
-  const additionalCoverage = radius;
-  // Convert distance to radians
-  const distanceRadians = (radius + additionalCoverage) / earthRadius;
-
-  // Calculate latitude delta (1 degree = 111.32 km)
-  const latDelta = distanceRadians * (180 / Math.PI);
-
-  // Calculate longitude delta based on latitude
-  const lonDelta = latDelta / Math.cos((latitude * Math.PI) / 180);
-
-  return {
-    latDelta,
-    lonDelta,
-  };
-};
-
 const Map = () => {
   const mapRef = useRef<MapView>(null);
 
@@ -55,22 +35,6 @@ const Map = () => {
   const latitude = DEFAULT_MAP_LOCATION.lat;
 
   const { latDelta, lonDelta } = calculateDeltas(latitude, 75);
-
-  // TODO: This shouldn't need to be sliced!
-  const searchResultJobAds = jobs.searchJobAds.slice(0, 300);
-
-  const regionToBoundingBox = (region: Region): BBox => {
-    let lngD: number;
-    if (region.longitudeDelta < 0) lngD = region.longitudeDelta + 360;
-    else lngD = region.longitudeDelta;
-
-    return [
-      region.longitude - lngD,
-      region.latitude - region.latitudeDelta,
-      region.longitude + lngD,
-      region.latitude + region.latitudeDelta,
-    ];
-  };
 
   const onRegionChangeComplete = async (region: Region) => {
     const mapBoundsFirst = regionToBoundingBox(region);
@@ -92,7 +56,7 @@ const Map = () => {
     setZoom(camera?.zoom ?? 10);
   };
 
-  const points = searchResultJobAds.map((searchJobAd) => {
+  const points = jobs.searchJobAds.map((searchJobAd) => {
     const loc = searchJobAd.primaryLocation;
 
     return {
@@ -119,25 +83,6 @@ const Map = () => {
       maxZoom: 25,
     },
   });
-
-  function onPointPress() {
-    Alert.alert(`Clicked on point!`);
-  }
-
-  const renderMarkers = () => {
-    console.log(`points: ${points.length}`);
-    return points.map((point) => {
-      return (
-        <MarkerWithWrapper
-          key={point.properties.searchJobAd.combinedId}
-          isSelected={false}
-          onPointPress={onPointPress}
-          point={point}
-          zoom={zoom}
-        ></MarkerWithWrapper>
-      );
-    });
-  };
 
   return (
     <View
@@ -188,7 +133,11 @@ const Map = () => {
             strokeColor="blue"
           />
 
-          {renderMarkers()}
+          <ClusteredMarkers
+            clusters={clusters}
+            zoom={zoom}
+            supercluster={supercluster}
+          />
         </MapView>
       </View>
     </View>
