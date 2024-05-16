@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import type { Region } from "react-native-maps";
 import MapView, { Circle, PROVIDER_GOOGLE } from "react-native-maps";
@@ -8,6 +8,7 @@ import useSupercluster from "use-supercluster";
 import MarkerWithWrapper from "@/components/MarkerWithWrapper";
 import jobs from "@/constants/jobs.json";
 import { SearchJobAdRo } from "@/models";
+import useTrackChanges from "@/hooks/useTrackChanges";
 
 export interface PointProperties {
   cluster: boolean;
@@ -120,6 +121,7 @@ const Map = () => {
     },
   });
 
+  const { renderCount, shouldTrack } = useTrackChanges(points);
   function onPointPress() {
     Alert.alert(`Clicked on point!`);
   }
@@ -134,6 +136,8 @@ const Map = () => {
           onPointPress={onPointPress}
           point={point}
           zoom={zoom}
+          shouldTrack={shouldTrack}
+          renderCount={renderCount}
         ></MarkerWithWrapper>
       );
     });

@@ -1,4 +1,4 @@
-import React, { Dispatch } from "react";
+import React, { Dispatch, MutableRefObject } from "react";
 import { Image, Platform, View } from "react-native";
 
 import { MapMarker } from "react-native-maps";
@@ -6,17 +6,16 @@ import styles from "./styles";
 
 interface Props {
   companyLogo: string | null;
-  update: Dispatch<React.SetStateAction<boolean>>;
-  markerRef: React.RefObject<MapMarker>;
+  renderCount: MutableRefObject<number>;
 }
 
-export const Marker = ({ companyLogo, markerRef, update }: Props) => {
+export const Marker = ({ companyLogo, renderCount }: Props) => {
   const onLoadEnd = () => {
-    if (Platform.OS === "android") {
-      markerRef.current?.redraw();
-    } else {
-      update(false);
-    }
+    renderCount.current++;
+  };
+
+  const onError = () => {
+    renderCount.current++;
   };
   return (
     <View
@@ -35,6 +34,7 @@ export const Marker = ({ companyLogo, markerRef, update }: Props) => {
           source={{ uri: companyLogo }}
           onLoadEnd={onLoadEnd}
           fadeDuration={0}
+          onError={onError}
         />
       ) : (
         <Image

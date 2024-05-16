@@ -1,25 +1,26 @@
-import { useRef, useState } from "react";
+import { MutableRefObject, useRef } from "react";
 import type { MapMarker } from "react-native-maps";
 import { Marker } from "react-native-maps";
 import { Marker as MarkerMap } from "@/components/Marker";
 
 import { PointWithProperties } from "@/app";
-import { Platform } from "react-native";
 
 type Props = {
   point: PointWithProperties;
   onPointPress: () => void;
   isSelected: boolean;
   zoom: number;
+
+  shouldTrack: boolean;
+  renderCount: MutableRefObject<number>;
 };
 
 export default function MarkerWithWrapper({
   point,
   onPointPress,
-  zoom,
-  isSelected,
+  shouldTrack,
+  renderCount,
 }: Props) {
-  const [shouldTrack, setShouldTrack] = useState(true);
   const coordinates = point.geometry.coordinates;
   const markerRef = useRef<MapMarker>(null);
 
@@ -31,7 +32,7 @@ export default function MarkerWithWrapper({
   return (
     <Marker
       ref={markerRef}
-      tracksViewChanges={Platform.OS === "android" ? false : shouldTrack}
+      tracksViewChanges={shouldTrack}
       coordinate={{
         latitude: lat,
         longitude: lng,
@@ -39,9 +40,8 @@ export default function MarkerWithWrapper({
       onPress={() => onPointPress()}
     >
       <MarkerMap
-        update={setShouldTrack}
-        markerRef={markerRef}
         companyLogo={job.company.logoImg?.variants.min_dim_64_url ?? null}
+        renderCount={renderCount}
       />
     </Marker>
   );
