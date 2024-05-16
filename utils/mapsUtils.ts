@@ -1,5 +1,8 @@
 import type { Region } from "react-native-maps";
 import type { BBox } from "geojson";
+import Supercluster from "supercluster";
+import { PointProperties } from "@/app";
+const logo = require("@/assets/images/company-placeholder-128.jpg");
 
 export const calculateDeltas = (latitude: number, radius: number) => {
   // Earth's radius in kilometers
@@ -33,4 +36,16 @@ export const regionToBoundingBox = (region: Region): BBox => {
     region.longitude + lngD,
     region.latitude + region.latitudeDelta,
   ];
+};
+
+export const getFirstNonNullMinDim64Url = (
+  cluster?: Array<Supercluster.PointFeature<PointProperties>>
+) => {
+  if (!cluster) return logo;
+  for (let point of cluster) {
+    const uri =
+      point.properties.job?.company?.logoImg?.variants?.min_dim_64_url;
+    if (uri) return { uri };
+  }
+  return logo;
 };
