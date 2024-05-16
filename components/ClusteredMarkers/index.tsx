@@ -1,10 +1,10 @@
 import { PointProperties, PointWithProperties } from "@/app";
 import React from "react";
-import { Alert, StyleSheet, View, Text } from "react-native";
+import { Alert, StyleSheet, View, Image } from "react-native";
 import { Marker } from "react-native-maps";
 import MarkerWithWrapper from "../MarkerWithWrapper";
 import Supercluster, { PointFeature } from "supercluster";
-
+import { getFirstNonNullMinDim64Url } from "@/utils";
 type Props = {
   clusters: (
     | PointFeature<
@@ -14,13 +14,21 @@ type Props = {
       >
     | PointFeature<Supercluster.ClusterProperties & Supercluster.AnyProps>
   )[];
+  supercluster:
+    | Supercluster<
+        {
+          [name: string]: any;
+        } & PointProperties,
+        Supercluster.AnyProps
+      >
+    | undefined;
   zoom: number;
 };
 
 export default function ClusteredMarkers({
   clusters,
-
   zoom,
+  supercluster,
 }: Props) {
   function onPointPress() {
     Alert.alert(`Clicked on point!`);
@@ -34,7 +42,13 @@ export default function ClusteredMarkers({
       return (
         <Marker key={properties.cluster_id} coordinate={coordinates}>
           <View style={styles.cluster}>
-            <Text style={styles.clusterCount}>{properties.point_count}</Text>
+            <Image
+              style={styles.logo}
+              resizeMode="contain"
+              source={getFirstNonNullMinDim64Url(
+                supercluster?.getLeaves(point.properties.cluster_id)
+              )}
+            />
           </View>
         </Marker>
       );
@@ -54,18 +68,18 @@ export default function ClusteredMarkers({
 
 const styles = StyleSheet.create({
   cluster: {
-    borderRadius: 15,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "blue",
+    width: 40,
+    height: 40,
+    padding: 3,
+    margin: 3,
+    borderRadius: 50,
     backgroundColor: "white",
-    width: 30,
-    height: 30,
+    overflow: "hidden",
+    zIndex: 3,
   },
-  clusterCount: {
-    fontSize: 16,
-    color: "blue",
+  logo: {
+    width: 34,
+    height: 34,
+    borderRadius: 30,
   },
 });

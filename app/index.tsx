@@ -74,7 +74,7 @@ const Map = () => {
     } as PointWithProperties;
   });
 
-  const { clusters } = useSupercluster({
+  const { clusters, supercluster } = useSupercluster({
     points,
     bounds,
     zoom,
@@ -133,7 +133,11 @@ const Map = () => {
             strokeColor="blue"
           />
 
-          <ClusteredMarkers clusters={clusters} zoom={zoom} />
+          <ClusteredMarkers
+            clusters={clusters}
+            zoom={zoom}
+            supercluster={supercluster}
+          />
         </MapView>
       </View>
     </View>
